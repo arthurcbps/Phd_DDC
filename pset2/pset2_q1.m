@@ -40,7 +40,7 @@ u_counter = zeros(5000, 10, 5);
 for t=1:10
     j=0;
     while j<= 4
-        u_counter(:,t, j+1)= X1t(:,t).*delta(j+1)+ X1.*gamma(j+1)+ u_counter(:,t, j+1);
+        u_counter(:,t, j+1)= X1t(:,t).*delta(j+1)+ X1.*gamma(j+1);
         j=j+1;
     end
 end
@@ -50,7 +50,7 @@ v = zeros(5000, 10, 5);
 % period it is just u_counter
 j=0;
 while j<= 4
-    v(:,10, j+1)=(X1t(:,10).*delta(j+1)+X1.*gamma(j+1))+v(:,10, j+1);
+    v(:,10, j+1)=(X1t(:,10).*delta(j+1)+X1.*gamma(j+1));
     j=j+1;
 end
 
