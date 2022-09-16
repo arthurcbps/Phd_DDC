@@ -7,7 +7,7 @@ load('dataassign22.mat')
 % Normalization
 X1 = X1(:, 2) - X1(:,1);
 
-Params_q1_no_switch= @(Params) q1_no_switch(Y, X1t, X1, Y_lag, Params(1:5),Params(6:10), Params(11));
+ParamsLL_linear = @(Params) q1_no_switch(Y, X1t, X1, Y_lag,Params(1:5),Params(2:6));
 
 %% 
 % A draft on using switching costs
