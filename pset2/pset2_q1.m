@@ -7,8 +7,8 @@ Params_q1= @(Params) q1(LY1,Y, X1t, X1, Params(1:5),Params(6:10),Params(11:15), 
 OptimOptions = optimoptions(@fminunc,'Display','Iter','StepTolerance',10^-8,'OptimalityTolerance',10^-8);
 
 S=fminunc(Params_q1,0*ones(17,1),OptimOptions);
-S1=fminunc(Params_q1,ones(17,1),OptimOptions);
-Solutions=[S1,S2]
+%S1=fminunc(Params_q1,ones(17,1),OptimOptions);
+S
 
 %% Backward recursion plus MLE 
 function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
@@ -27,20 +27,23 @@ function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
     % In the last period v is just u_counter (and a potential switching cost)
     for j=1:5
         for s=1:5
-            v(:,10, s,j)=u_counter(:,t, j)-c*(s~=j);
+            v(:,10, s,j)=u_counter(:,10, j)-c*(s~=j);
         end
     end
     
-    for t=9:1
-        for j=1:5
-            %Decision states
-            for s=2:5
+    for t=9:-1:1
+        %Decision states
+        for s=2:5
+            %Non terminal choices
+            for j=2:5
                 %Immediate U+expected U(taken choice as state) minus transition cost
                 v(:, t, s, j) = u_counter(:,t, j) + beta.*(log(sum(exp(v(:, t+1,j,:)), 4))+0.57721)-c*(s~=j);
             end
-            %Terminal state
-            v(:, t, 1, j) = u_counter(:,t, 1) + beta.*v(:,t+1,1,1);
+            %Terminal choice
+            v(:, t, s, 1) = u_counter(:,t, 1) + beta.*v(:,t+1,1,1)-c;
         end
+        %Terminal state
+        v(:, t, 1, 1) = u_counter(:,t, 1) + beta.*v(:,t+1,1,1);
     end
     
     %Denominator for every -individual-time-state combination
