@@ -44,6 +44,9 @@ function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
         end
         %Terminal state
         v(:, t, 1, 1) = u_counter(:,t, 1) + beta.*v(:,t+1,1,1);
+        for j=2:5
+            v(:, t, 1, j)=-Inf;
+        end
     end
     
     %Denominator for every -individual-time-state combination
@@ -63,7 +66,7 @@ function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
         end
     end
 
-    ll=-sum(Y_choice.*log(p), "all");
+    ll=-sum(log(p(Y_choice==1)), "all");
 end
         
 
