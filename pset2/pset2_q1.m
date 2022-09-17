@@ -1,5 +1,7 @@
 clear
 clc
+tic 
+
 load('dataassign22.mat')
 
 %Optimization
@@ -7,9 +9,8 @@ Params_q1= @(Params) q1(LY1,Y, X1t, X1, Params(1:5),Params(6:10),Params(11:15), 
 OptimOptions = optimoptions(@fminunc,'Display','Iter','StepTolerance',10^-8,'OptimalityTolerance',10^-8);
 
 S=fminunc(Params_q1,0*ones(17,1),OptimOptions);
-%S1=fminunc(Params_q1,ones(17,1),OptimOptions);
+toc
 S
-
 %% Backward recursion plus MLE 
 function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
     % computing flow utility net switching cost and error term on each counterfactual path
@@ -44,15 +45,14 @@ function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
         end
         %Terminal state
         v(:, t, 1, 1) = u_counter(:,t, 1) + beta.*v(:,t+1,1,1);
-        for j=2:5
-            v(:, t, 1, j)=-Inf;
-        end
     end
     
     %Denominator for every -individual-time-state combination
     denom = sum(exp(v(:, :, :,:)), 4);
     p = exp(v)./denom;
-    
+    p(:,:,1,1)=1;
+    p(:,:,1,2:5)=0;
+
     % likelihood
     Y_choice= zeros(5000, 10, 5,5);
    
