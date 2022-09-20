@@ -1,8 +1,7 @@
 clear
 clc
 tic 
-
-load('dataassign22.mat')
+load('dataassign21.mat')
 
 %Optimization
 Params_q1= @(Params) q1(LY1,Y, X1t, X1, Params(1:5),Params(6:10),Params(11:15), Params(16),Params(17));
@@ -14,7 +13,7 @@ S
 %% Backward recursion plus MLE 
 function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
     % computing flow utility net switching cost and error term on each counterfactual path
-    u_counter = zeros(5000, 10, 5);
+    u_counter = zeros(3000, 10, 5);
     
     for t=1:10
         for j=2:5
@@ -23,7 +22,7 @@ function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
     end
     
     %v=(individual, period, state, choice)
-    v = zeros(5000, 10, 5, 5);
+    v = zeros(3000, 10, 5, 5);
     
     % In the last period v is just u_counter (and a potential switching cost)
     for j=1:5
@@ -54,7 +53,7 @@ function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
     p(:,:,1,2:5)=0;
 
     % likelihood
-    Y_choice= zeros(5000, 10, 5,5);
+    Y_choice= zeros(3000, 10, 5,5);
    
     Y_choice(:, 1, s,j) = (Y(:,1) ==j-1 & LY1==s-1);
 
@@ -68,5 +67,3 @@ function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
 
     ll=-sum(log(p(Y_choice==1)), "all");
 end
-        
-
