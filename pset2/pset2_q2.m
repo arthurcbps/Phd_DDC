@@ -33,10 +33,23 @@ Alpha=fminunc(ParamsLL_linear, ones(6,1)',OptimOptions);
 
 %% ML estimation
 clearvars -except Alpha
+load('dataassign22.mat')
 
 %Test path
 XPath(zeros(5,1),ones(5,3),zeros(5,3),Alpha)
 
+%V
+tic
+V(1, ... %time
+    3*ones(size(X1,1),1), ... %states
+    X1, ... %X invariant
+    X1t(:,10), ... %X variant
+    zeros(5,1), ... %Gamma 1
+    zeros(5,1), ... %Gamma 2
+    ones(5,1), ... %Delta
+    0, ... %Trans cost
+    Alpha) %Trans X parameters 
+toc
 
 %% Transition LL
 function LL = x_LL(X, Xlag, Ylag, sigma, alpha)
@@ -45,15 +58,25 @@ W = [ones(N, 1) Xlag Ylag];
 LL = -1*(-(N/2).*log(sigma^2) - (1/(2*sigma^2))*sum((W*alpha').^2));
 end
 
-%% Get the path of X given an initial value X, a sequence of future choices SC and a sequence of shocks Eps and transition parameters Alpha
-% This is a function of Eps too because the plan is to use this function to evaluate integrals
-%Note SC and Eps have the same length but SC starts at time t and Eps at
-%t+1
-function XPath=XPath(X,SC,Eps,Alpha)
-    XPath=zeros(size(SC));
-    XPath(:,1)=Alpha(1)*ones(size(X,1),1)+Alpha(2)*X+Alpha(SC(:,1)+2)'+Eps(:,1);
-    for i=2:size(XPath,2)
-        XPath(:,i)=Alpha(1)*ones(size(X,1),1)+Alpha(2)*XPath(:,i-1)+Alpha(SC(:,i-1)+2)'+Eps(:,i);
+%% Conditional valuation function
+%time/state/X1/X1t/gamma1/gamma2/delta/c/Alpha
+function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha)
+    u=zeros(size(X1));
+    if t==9
+        for j=1:5
+            %Update X according to j and a random shock
+            X1tUpdt=Alpha(1)*ones(size(X1t,1),1)+Alpha(2)*X1t+Alpha(j+1)*ones(size(X1t))+normrnd(0,1,size(X1,1),1);
+            %Ut+1
+            u(:, j)= X1tUpdt.*delta(j)+ X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j);
+        end
+        Vvalue=log(sum(exp(u),2))+0.57721;
+    else
+        for j=1:5
+            %Update X according to j and a random shock
+            X1tUpdt=Alpha(1)*ones(size(X1t,1),1)+Alpha(2)*X1t+Alpha(j+1)*ones(size(X1t))+normrnd(0,1,size(X1,1),1);
+            %Vt+1
+            u(:, j)= X1tUpdt.*delta(j)+ X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j)+V(t+1,j,X1,X1tUpdt,gamma1,gamma2, delta,c,Alpha);
+        end
+        Vvalue=log(sum(exp(u),2))+0.57721;
     end
 end
-
