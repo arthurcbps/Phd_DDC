@@ -29,15 +29,18 @@ ParamsLL_linear = @(Params) x_LL(X_current, X_lag, Y_lag,Params(1),Params(2:6));
 
 %Optimization
 OptimOptions = optimoptions(@fminunc,'Display','Iter','StepTolerance',10^-10,'OptimalityTolerance',10^-10);
-Alpha=fminunc(ParamsLL_linear, ones(6,1)',OptimOptions);
+optimizers=fminunc(ParamsLL_linear, ones(6,1)',OptimOptions);
 
-%% ML estimation
-clearvars -except Alpha
+alpha = optimizers(2:6);
+sigma = optimizers(1);
+
+% ML estimation
+clearvars -except alpha sigma 
 load('dataassign22.mat')
 
 %V
 tic
-V(7, ... %time
+x = V(1, ... %time
     3*ones(size(X1,1),1), ... %states
     X1, ... %X invariant
     X1t(:,10), ... %X variant
@@ -45,26 +48,27 @@ V(7, ... %time
     zeros(5,1), ... %Gamma 2
     ones(5,1), ... %Delta
     0, ... %Trans cost
-    Alpha, ... %Trans X parameters 
-    .95) %Discount rate
+    alpha, ... %Trans X parameters 
+    sigma, ...
+    .95) ;%Discount rate
 toc
-
-%% Transition LL
+%%
+% Transition LL
 function LL = x_LL(X, Xlag, Ylag, sigma, alpha)
 N = length(X);
 W = [ones(N, 1) Xlag Ylag];
-LL = -1*(-(N/2).*log(sigma^2) - (1/(2*sigma^2))*sum((W*alpha').^2));
+LL = -1*(-(N/2).*log(sigma^2) - (1/(2*sigma^2))*sum((X - W*alpha').^2));
 end
 
 %% Conditional valuation function
 %time/state/X1/X1t/gamma1/gamma2/delta/c/Alpha
-function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha,beta)
+function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha, sigma, beta)
     u=zeros(size(X1));
-    X1taux=Alpha(1)*ones(size(X1t,1),1)+Alpha(2)*X1t+normrnd(0,1,size(X1,1),1);
+    X1taux=Alpha(1)*ones(size(X1t,1),1)+Alpha(2)*X1t+normrnd(0,sigma,size(X1,1),1);
     if t==9
         for j=1:5
             %Update X according to j and a random shock
-            X1tUpdt=X1taux+Alpha(j+1)*ones(size(X1t));
+            X1tUpdt=X1taux+(j >= 2 && j <= 4).*(Alpha(j)*ones(size(X1t)));
             %Ut+1
             u(:, j)= X1tUpdt.*delta(j)+X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j);
         end
@@ -72,9 +76,9 @@ function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha,beta)
     else
         for j=1:5
             %Update X according to j and a random shock
-            X1tUpdt=X1taux+Alpha(j+1)*ones(size(X1t));
+            X1tUpdt=X1taux+(j >= 2 && j <= 4).*(Alpha(j)*ones(size(X1t)));
             %Vt+1
-            u(:, j)= X1tUpdt.*delta(j)+ X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j)+beta*V(t+1,j,X1,X1tUpdt,gamma1,gamma2, delta,c,Alpha,beta);
+            u(:, j)= X1tUpdt.*delta(j)+ X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j)+beta*V(t+1,j,X1,X1tUpdt,gamma1,gamma2, delta,c,Alpha, sigma, beta);
         end
         Vvalue=log(sum(exp(u),2))+0.57721;
     end
