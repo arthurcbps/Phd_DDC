@@ -35,12 +35,9 @@ Alpha=fminunc(ParamsLL_linear, ones(6,1)',OptimOptions);
 clearvars -except Alpha
 load('dataassign22.mat')
 
-%Test path
-XPath(zeros(5,1),ones(5,3),zeros(5,3),Alpha)
-
 %V
 tic
-V(1, ... %time
+V(7, ... %time
     3*ones(size(X1,1),1), ... %states
     X1, ... %X invariant
     X1t(:,10), ... %X variant
@@ -48,7 +45,8 @@ V(1, ... %time
     zeros(5,1), ... %Gamma 2
     ones(5,1), ... %Delta
     0, ... %Trans cost
-    Alpha) %Trans X parameters 
+    Alpha, ... %Trans X parameters 
+    .95) %Discount rate
 toc
 
 %% Transition LL
@@ -60,22 +58,23 @@ end
 
 %% Conditional valuation function
 %time/state/X1/X1t/gamma1/gamma2/delta/c/Alpha
-function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha)
+function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha,beta)
     u=zeros(size(X1));
+    X1taux=Alpha(1)*ones(size(X1t,1),1)+Alpha(2)*X1t+normrnd(0,1,size(X1,1),1);
     if t==9
         for j=1:5
             %Update X according to j and a random shock
-            X1tUpdt=Alpha(1)*ones(size(X1t,1),1)+Alpha(2)*X1t+Alpha(j+1)*ones(size(X1t))+normrnd(0,1,size(X1,1),1);
+            X1tUpdt=X1taux+Alpha(j+1)*ones(size(X1t));
             %Ut+1
-            u(:, j)= X1tUpdt.*delta(j)+ X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j);
+            u(:, j)= X1tUpdt.*delta(j)+X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j);
         end
         Vvalue=log(sum(exp(u),2))+0.57721;
     else
         for j=1:5
             %Update X according to j and a random shock
-            X1tUpdt=Alpha(1)*ones(size(X1t,1),1)+Alpha(2)*X1t+Alpha(j+1)*ones(size(X1t))+normrnd(0,1,size(X1,1),1);
+            X1tUpdt=X1taux+Alpha(j+1)*ones(size(X1t));
             %Vt+1
-            u(:, j)= X1tUpdt.*delta(j)+ X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j)+V(t+1,j,X1,X1tUpdt,gamma1,gamma2, delta,c,Alpha);
+            u(:, j)= X1tUpdt.*delta(j)+ X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j)+beta*V(t+1,j,X1,X1tUpdt,gamma1,gamma2, delta,c,Alpha,beta);
         end
         Vvalue=log(sum(exp(u),2))+0.57721;
     end
