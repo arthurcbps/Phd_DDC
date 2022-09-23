@@ -31,28 +31,34 @@ ParamsLL_linear = @(Params) x_LL(X_current, X_lag, Y_lag,Params(1),Params(2:6));
 OptimOptions = optimoptions(@fminunc,'Display','Iter','StepTolerance',10^-10,'OptimalityTolerance',10^-10);
 optimizers=fminunc(ParamsLL_linear, ones(6,1)',OptimOptions);
 
+
 alpha = optimizers(2:6);
 sigma = optimizers(1);
 
+save("transition_pars", "alpha", "sigma")
+%%
 % ML estimation
-clearvars -except alpha sigma 
+clearvars
 load('dataassign22.mat')
-
-%V
+load("transition_pars.mat")
+ 
+%V - remember to set subset X1t correctly
 tic
-V(7, ... %time
-    3*ones(size(X1,1),1), ... %states
+x = V(10, ... %time
+    2, ... %state
     X1, ... %X invariant
-    X1t(:,10), ... %X variant
-    zeros(5,1), ... %Gamma 1
-    zeros(5,1), ... %Gamma 2
+    X1t(:,1), ... % time variant regressor
+    ones(5,1), ... %Gamma 1
+    ones(5,1), ... %Gamma 2
     ones(5,1), ... %Delta
-    0, ... %Trans cost
-    Alpha, ... %Trans X parameters 
-    .95) %Discount rate
+    0.5, ... %Trans cost
+    alpha, ... %Trans X parameters 
+    sigma, ... % Trans X parameter
+    .95, ...%Discount rate
+    1 );% epsilon draws
 toc
 %%
-% Transition LL
+%Transition LL
 function LL = x_LL(X, Xlag, Ylag, sigma, alpha)
 N = length(X);
 W = [ones(N, 1) Xlag Ylag];
@@ -61,24 +67,38 @@ end
 
 %% Conditional valuation function
 %time/state/X1/X1t/gamma1/gamma2/delta/c/Alpha
-function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha, sigma, beta)
-    u=zeros(size(X1));
-    X1taux=Alpha(1)*ones(size(X1t,1),1)+Alpha(2)*X1t+normrnd(0,sigma,size(X1,1),1);
+function Vvalue=V(t,s,X1,X1t_col, gamma1,gamma2, delta,c,Alpha, sigma, beta, n_draws)
+J = 5;
+% one possible flow utility for each choice
+    u=zeros(length(X1), J);
+    u = repmat(u, 1, 1, n_draws);
+
+    % take repeated draws of epsilon's distribution, we will average over
+    % realizations
+    epsilon_draws = normrnd(0, sigma, length(X1), n_draws);
+    X1t_baseline = Alpha(1)*ones(size(X1t_col))+Alpha(2)*X1t_col; 
+    X1taux=repmat(X1t_baseline, 1, n_draws)+epsilon_draws;
+
     if t==9
-        for j=1:5
+        for j=2:5
             %Update X according to j and a random shock
-            X1tUpdt=X1taux+Alpha(j+1)*ones(size(X1t));
+            X1tUpdt=X1taux+(j >= 2 && j <= 4).*(Alpha(j).*ones(length(X1), n_draws));
             %Ut+1
-            u(:, j)= X1tUpdt.*delta(j)+X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j);
+            u(:, j, :)= X1tUpdt.*delta(j)+repmat(X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j), 1, n_draws);
         end
-        Vvalue=log(sum(exp(u),2))+0.57721;
-    else
-        for j=1:5
+        % counterfactual utility in case choice j = 0 is made - no future
+        % value term
+    u(:, 1, :) =  X1tUpdt*delta(1)+ repmat(X1(:,1).*gamma1(1)+ X1(:,2).*gamma2(1)-c.*(s~=1), 1, n_draws);
+    
+        Vvalue=mean(log(sum(exp(u),2))+0.57721, 3);
+    else 
+        for j=2:5
             %Update X according to j and a random shock
-            X1tUpdt=X1taux+Alpha(j+1)*ones(size(X1t));
+               X1tUpdt=X1taux+(j >= 2 && j <= 4).*(Alpha(j).*ones(length(X1), n_draws));
             %Vt+1
-            u(:, j)= X1tUpdt.*delta(j)+ X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j)+beta*V(t+1,j,X1,X1tUpdt,gamma1,gamma2, delta,c,Alpha,beta);
+            u(:, j, :)= X1tUpdt*delta(j)+ repmat(X1(:,1).*gamma1(j)+ X1(:,2).*gamma2(j)-c.*(s~=j), 1, n_draws) ...
+                +beta*V(t+1,j,X1,mean(X1tUpdt, 2),gamma1,gamma2, delta,c,Alpha, sigma, beta, n_draws);
         end
-        Vvalue=log(sum(exp(u),2))+0.57721;
+        Vvalue=mean(log(sum(exp(u),2))+0.57721, 3);
     end
 end
