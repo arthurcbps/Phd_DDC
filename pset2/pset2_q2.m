@@ -38,17 +38,17 @@ sigma = optimizers(1);
 clearvars -except Alpha sigma 
 load('dataassign22.mat')
 
-%Normal draws
-Eps=normrnd(0,sigma,1,1);
+%Normal draws (1,-1 with equal probability is symmetric around 0 and has variance 1)
+Eps=normrnd(0,sigma,5,1);
 
 %ML estimation of the model
 tic
 %Optimization
 Params_LL= @(Params) LL(LY1, Y, X1,X1t, Params(1:4),Params(5:8), Params(9:12),Params(13),Alpha, sigma, Params(14),Eps);
-%Params_LL(0*ones(14,1))
+%Params_LL(ones(14,1))
 
 OptimOptions = optimoptions(@fminunc,'Display','Iter','StepTolerance',10^-6,'OptimalityTolerance',10^-6);
-S=fminunc(Params_LL,0*ones(14,1),OptimOptions);
+S=fminunc(Params_LL,0.5*ones(14,1),OptimOptions);
 toc
 %% Transition LL
 function LL = x_LL(X, Xlag, Ylag, sigma, alpha)
@@ -94,7 +94,7 @@ function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps)
         for j=2:5
             
             %Calculate and add expected optimal behavior
-            v(:,j)=beta*log(sum(exp(V(t+1,j-1,repelem(X1,draws,1),X1tUpdt(:,j-1),gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps)),2))+0.57721;
+            v(:,j)=beta*(log(sum(exp(V(t+1,j-1,repelem(X1,draws,1),X1tUpdt(:,j-1),gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps)),2))+0.57721);
             
             %Average over simulated normal errors
             Vvalue(:,j)=u(:,j)+sum(reshape(v(:,j),draws,[]),1)';
@@ -108,19 +108,18 @@ end
 %% Log likelihood
 function LL=LL(LY1, Y, X1,X1t, gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps)
  
-   %At time 1 calculate conditional valuations
    Y=[LY1,Y];
    LL=0;
 
-   for t=1:9
+   for t=8:10
        
        CV=V(t,Y(Y(:,t)~=0,t),X1(Y(:,t)~=0,:),X1t(Y(:,t)~=0,t),gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps);
 
        n=size(Y(Y(:,t)~=0,t),1);
 
-       num=sum(CV*(repmat((1:5)',1,n)==Y(Y(:,t)~=0,t+1)'),2);
-       den=sum(CV,2);
-      
+       num=max(exp(CV).*(repmat((0:4)',1,n)==Y(Y(:,t)~=0,t+1)')',[],2);
+       den=sum(exp(CV),2);       
+
        LL=LL-sum(log(num)-log(den));
 
    end
