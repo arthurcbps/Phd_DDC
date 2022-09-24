@@ -7,8 +7,10 @@ load('dataassign21.mat')
 Params_q1= @(Params) q1(LY1,Y, X1t, X1, Params(1:5),Params(6:10),Params(11:15), Params(16),Params(17));
 OptimOptions = optimoptions(@fminunc,'Display','Iter','StepTolerance',10^-8,'OptimalityTolerance',10^-8);
 
-S=fminunc(Params_q1,ones(17,1),OptimOptions);
+S=fminunc(Params_q1,zeros(17,1),OptimOptions);
 toc
+
+save("estimates_1a", "S")
 %% Backward recursion plus MLE 
 function ll = q1(LY1, Y, X1t, X1, delta, gamma1,gamma2, beta,c)
     % computing flow utility net switching cost and error term on each counterfactual path

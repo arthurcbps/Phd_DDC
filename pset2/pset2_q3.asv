@@ -20,19 +20,19 @@ time_in_state_1 = sum(mt_diff(aux1));
 
 
 
-q_10_hat = sum(State == 1 & Naturemove == 1)/time_in_state_1;
-q_11_hat = 1 - q_10_hat;
-q_01_hat = sum(State == 0 & Naturemove == 1)/time_in_state_0;
-q_00_hat = 1 - q_01_hat;
+q_10 = sum(State == 1 & Naturemove == 1)/time_in_state_1;
+q_11 = 1 - q_10;
+q_01 = sum(State == 0 & Naturemove == 1)/time_in_state_0;
+q_00 = 1 - q_01;
 %% Player's move arrival
 % That is just the relative frequency of being allowed to change
 player_moved = 1-Naturemove;
-lambda_hat = sum(player_moved)/10000;
+lambda = sum(player_moved)/10000;
 clear player_moved aux0 aux1 time_in_state_0 time_in_state_1
 
 
 
-%% Counting ocurrences of each state-action-incumbency status
+%% Counting ocurrences of each state
 % combinations are sjk - where s means incumbency status, j is the action and
 % k is nature's state
 
@@ -55,10 +55,10 @@ Y = [Y_111; Y_110 ; Y_101 ; Y_100 ; Y_011; Y_010 ; Y_001 ; Y_000];
 %%
 
 %Optimization
-Params_q3= @(Params) continuous_ll(Y, lambda_hat, rho, q_01_hat,q_10_hat,Params(1), Params(2),Params(3));
+Params_q3= @(Params) continuous_ll(Y, X1t, X1, Params(1:5),Params(6:10),Params(11:15), Params(16),Params(17));
 OptimOptions = optimoptions(@fminunc,'Display','Iter','StepTolerance',10^-8,'OptimalityTolerance',10^-8);
 
-S=fminunc(Params_q3,zeros(3,1),OptimOptions);
+S=fminunc(Params_q1,zeros(17,1),OptimOptions);
 toc
 
 %% Nested fixed point
