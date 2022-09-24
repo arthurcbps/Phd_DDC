@@ -1,5 +1,4 @@
 clear
-%% 
 %Reading cleaned data from R (data with appropriate sample and in long
 %format - each row is from individual i at period t
 
@@ -38,18 +37,40 @@ sigma = optimizers(1);
 clearvars -except Alpha sigma 
 load('dataassign22.mat')
 
-%Normal draws (1,-1 with equal probability is symmetric around 0 and has variance 1)
-Eps=normrnd(0,sigma,5,1);
 
-%ML estimation of the model
-tic
-%Optimization
-Params_LL= @(Params) LL(LY1, Y, X1,X1t, Params(1:4),Params(5:8), Params(9:12),Params(13),Alpha, sigma, Params(14),Eps);
-%Params_LL(ones(14,1))
 
+%% Optimization
 OptimOptions = optimoptions(@fminunc,'Display','Iter','StepTolerance',10^-6,'OptimalityTolerance',10^-6);
-S=fminunc(Params_LL,0.5*ones(14,1),OptimOptions);
-toc
+
+%No errors
+Eps=0;
+Params_LL= @(Params) LL(6,LY1, Y, X1,X1t, Params(1:4),Params(5:8), Params(9:12),Params(13),Alpha, sigma, Params(14),Eps);
+S1=fminunc(Params_LL,0.5*ones(14,1),OptimOptions);
+
+Params_LL= @(Params) LL(7,LY1, Y, X1,X1t, Params(1:4),Params(5:8), Params(9:12),Params(13),Alpha, sigma, Params(14),Eps);
+S2=fminunc(Params_LL,0.5*ones(14,1),OptimOptions);
+
+Params_LL= @(Params) LL(9,LY1, Y, X1,X1t, Params(1:4),Params(5:8), Params(9:12),Params(13),Alpha, sigma, Params(14),Eps);
+S3=fminunc(Params_LL,0.5*ones(14,1),OptimOptions);
+
+%Two errors
+%Instead of a random approximation we take a discrete approximation that
+%preserves the mean, variance and symmetry around o of a standard normal.
+Eps=[-1,1]';
+Params_LL= @(Params) LL(6,LY1, Y, X1,X1t, Params(1:4),Params(5:8), Params(9:12),Params(13),Alpha, sigma, Params(14),Eps);
+S4=fminunc(Params_LL,0.5*ones(14,1),OptimOptions);
+
+Params_LL= @(Params) LL(7,LY1, Y, X1,X1t, Params(1:4),Params(5:8), Params(9:12),Params(13),Alpha, sigma, Params(14),Eps);
+S5=fminunc(Params_LL,0.5*ones(14,1),OptimOptions);
+
+Params_LL= @(Params) LL(9,LY1, Y, X1,X1t, Params(1:4),Params(5:8), Params(9:12),Params(13),Alpha, sigma, Params(14),Eps);
+S6=fminunc(Params_LL,0.5*ones(14,1),OptimOptions);
+
+%15 errors
+Eps=normrnd(0,sigma,15,1);
+Params_LL= @(Params) LL(9,LY1, Y, X1,X1t, Params(1:4),Params(5:8), Params(9:12),Params(13),Alpha, sigma, Params(14),Eps);
+S7(:,4)=fminunc(Params_LL,0.5*ones(14,1),OptimOptions);
+
 %% Transition LL
 function LL = x_LL(X, Xlag, Ylag, sigma, alpha)
 N = length(X);
@@ -65,7 +86,6 @@ function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps)
     n=size(X1t,1);
     draws=length(Eps);
     Vvalue=zeros(n,5);
-
 
     %Get immediate utilities
     u=zeros(n,5);    
@@ -97,7 +117,7 @@ function Vvalue=V(t,s,X1,X1t,gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps)
             v(:,j)=beta*(log(sum(exp(V(t+1,j-1,repelem(X1,draws,1),X1tUpdt(:,j-1),gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps)),2))+0.57721);
             
             %Average over simulated normal errors
-            Vvalue(:,j)=u(:,j)+sum(reshape(v(:,j),draws,[]),1)';
+            Vvalue(:,j)=u(:,j)+(1/draws)*sum(reshape(v(:,j),draws,[]),1)';
 
         end
 
@@ -106,12 +126,12 @@ end
 
 
 %% Log likelihood
-function LL=LL(LY1, Y, X1,X1t, gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps)
+function LL=LL(tstart,LY1, Y, X1,X1t, gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps)
  
    Y=[LY1,Y];
    LL=0;
 
-   for t=8:10
+   for t=tstart:10
        
        CV=V(t,Y(Y(:,t)~=0,t),X1(Y(:,t)~=0,:),X1t(Y(:,t)~=0,t),gamma1,gamma2, delta,c,Alpha, sigma, beta,Eps);
 
