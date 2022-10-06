@@ -45,7 +45,7 @@ write.csv(transition_state, file = "transitionState_allObserved.csv", row.names 
 
 
 ### Estimating CCPs - there are functions of every possible combination of
-### PState and State
+### PState, State, and lagged-firm choice
 
 
 ### Putting in long-format
@@ -58,11 +58,17 @@ Firm1 <- data$Firm1 %>%
   pivot_longer(V1:V5,
                names_to = "time",
                names_prefix = "V",
-               values_to = "choice"
+               values_to = "choice_current"
   ) %>%
   mutate(
     time = as.numeric(time)
-  )
+  ) %>%
+  group_by(market) %>%
+  arrange(time) %>%
+  mutate(choice_lag = lag(choice_current, 1)) %>%
+  #firms are all out of the market at t=0
+  mutate(choice_lag = ifelse(time == 1, 0, choice_lag))
+
 
 PState <- data$PState %>% 
   as.data.frame() %>%
@@ -76,11 +82,11 @@ PState <- data$PState %>%
 CCP_calculation <- Firm1 %>%
   left_join(State_long) %>%
   left_join(PState) %>%
-  group_by(choice, state_current, Pstate) %>%
+  group_by(choice_current, state_current, Pstate, choice_lag) %>%
   summarise(
     count = n()
   ) %>%
-  group_by(state_current, Pstate) %>%
+  group_by(state_current, Pstate, choice_lag) %>%
   mutate(
     CCP = count/sum(count)
   ) %>%
