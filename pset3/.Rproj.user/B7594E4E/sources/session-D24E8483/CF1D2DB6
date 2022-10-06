@@ -1,26 +1,27 @@
 {
-    "id": "CC8F4421",
-    "path": "~/GitHub/Phd_DDC/pset2/clean_dataQ2.R",
-    "project_path": null,
+    "id": "CF1D2DB6",
+    "path": "~/GitHub/Phd_DDC/pset3/q1_1stStage.R",
+    "project_path": "q1_1stStage.R",
     "type": "r_source",
-    "hash": "1490553230",
+    "hash": "0",
     "contents": "",
-    "dirty": false,
-    "created": 1665001254528.0,
+    "dirty": true,
+    "created": 1665001238317.0,
     "source_on_save": false,
-    "relative_order": 2,
+    "relative_order": 1,
     "properties": {
+        "tempName": "Untitled1",
         "source_window_id": "",
         "Source": "Source",
         "cursorPosition": "39,0",
-        "scrollLine": "0"
+        "scrollLine": "20"
     },
     "folds": "",
-    "lastKnownWriteTime": 1663276330,
+    "lastKnownWriteTime": 1665010252,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1663276330,
+    "last_content_update": 1665086031629,
     "read_only": false,
     "read_only_alternatives": []
 }

@@ -35,12 +35,8 @@ State1 <- State_long %>%
   group_by(state_lag) %>%
   mutate(transition_prob = count / sum(count))
 
-transition_state <- matrix(
-  c(State1$transition_prob),
-  nrow = 2
-)
 
-write.csv(transition_state, file = "transitionState_allObserved.csv", row.names = FALSE)
+write.csv(State1, file = "transitionState_allObserved.csv", row.names = FALSE)
 
 
 

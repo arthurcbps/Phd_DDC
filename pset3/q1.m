@@ -1,8 +1,10 @@
 load('dataassign3')
 
 CCPs=readtable('ccp_allObserved.csv');
-
+state_transition = readtable('transitionState_allObserved.csv');
 %Get state transitions
+state_transition = table2array(state_transition);
+
 LState=State(:,1:4);
 FState=State(:,2:5);
 
@@ -27,13 +29,14 @@ V00=((1-p00_0)*log(CCPs(3))+p00_0*log(CCPs(1)));
 
 v(PState, State, Firm1, .9, ones(1,4),V11,V10,V01,V00)
 
-%% Backward recursion plus MLE 
+%%  MLE 
 function v = v(PState, State, Firm1, beta, alpha,V11,V10,V01,V00)
     
     t=size(State,2);
     n=size(State,1);
 
-    % computing flow utility (market,choice,state)    
+    % computing flow utility (market,choice,state)
+    
     u=alpha(1)*ones(n,1)+alpha(2)*State+alpha(3)*repelem(PState,1,t)+alpha(4)*(ones(size(Firm1))-Firm1);
     
    %value function of entering/staying
