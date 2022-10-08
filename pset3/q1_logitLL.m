@@ -1,3 +1,4 @@
+
 function ll=q1_logitLL(alpha, State, PState, Firm1, V00, V11, V01, V10)
 beta = 0.9;
 LagFirm1 = [zeros(5000, 1), Firm1(:, 1:4)];

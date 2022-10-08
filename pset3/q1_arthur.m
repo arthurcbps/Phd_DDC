@@ -39,4 +39,16 @@ OptimOptions = optimoptions(@fminunc,'Display','Iter','StepTolerance',10^-8,'Opt
 
 S=fminunc(Params_LL_q1,ones(4,1),OptimOptions);
 
+% this estimates the price process too, even though it is not asked, it
+% is good as a benchmark for future results
+[N, T] = size(State);
+Ystack = Y(:);
+Statestack = State(:);
+PStatestack = repmat(PState,T,1);
+Firm1stack = Firm1(:);
 
+X = [ones(N*T,1), Statestack, PStatestack, Firm1stack];
+gamma_hat = inv(X'*X)*(X'*Ystack);
+sigma_hat = var(Ystack-X*gamma_hat)';
+
+% gamma0 = 6.98, gamma1 = 1.02, gamma2 = -0.28, gamma3 = -0.7, sigma = 0.98
