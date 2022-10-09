@@ -13,6 +13,7 @@ StackState = reshape(State, [], 1);
 
 alpha_hat = [-0.49; -1.00; 0.31; -1.58];
 gamma_hat = [6.98; 1.02; -0.28; -0.70];
+
 sigma_hat = 0.97;
 
 params = [alpha_hat;gamma_hat;sigma_hat];
@@ -109,13 +110,13 @@ while max(abs(params-params0))>1e-3 && count <= 200
     q_1_stack = repmat(q_1, 5,1);
     q_0_stack = repmat(q_0, 5,1);
 
-    aux_0 = q_0_stack.*(1-like_nst_Stack(:, 1));
-    aux_1 = q_1_stack.*(1-like_nst_Stack(:, 2));
+    aux_0 = (1-like_nst_Stack(:, 1));
+    aux_1 = (1-like_nst_Stack(:, 2));
 
-    p_001 = mean(aux_0(StackState == 0));
-    p_011 = mean(aux_1(StackState == 0));
-    p_101 = mean(aux_0(StackState == 1));
-    p_111 = mean(aux_1(StackState == 1));
+    p_001 = mean(aux_0(StackState == 0 & StackLagFirm1 == 1));
+    p_011 = mean(aux_1(StackState == 0 & StackLagFirm1 == 1));
+    p_101 = mean(aux_0(StackState == 1 & StackLagFirm1 == 1));
+    p_111 = mean(aux_1(StackState == 1 & StackLagFirm1 == 1));
 
     count = count+1;
     disp(["count:", count ])
