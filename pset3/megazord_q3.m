@@ -24,15 +24,15 @@ beta = 0.9;
 % the initial guess for CCPs and the state transition are taken from
 % Question 1, too (adding a bit of noise)
 
-p_101 = 0.56;
-p_111 = 0.36;
-p_001 = 0.23;
+p_101 = 0.5;
+p_111 = 0.3;
+p_001 = 0.2;
 p_011 = 0.10;
 
 
-pi_00 = 0.82;
-pi_01 = 0.18;
-pi_10 = 0.33;
+pi_00 = 0.85;
+pi_01 = 0.15;
+pi_10 = 0.4;
 pi_11 = 0.67;
 
 pi = [pi_00 pi_01; pi_10 pi_11];
@@ -95,6 +95,11 @@ while max(abs(params-params0))>1e-3 && count <= 200
 
     [initial_pi, pi, q_n1t] = typeprob(initial_pi, pi, like_nst);
     q_n0t = 1-q_n1t;
+
+    pi_00 = pi(1,1);
+    pi_01 = pi(1,2);
+    pi_10 = pi(2,1);
+    pi_11 = pi(2,2);
 
     % Now we maximize the likelihood using q as weights
     opt = fminunc(@(params)likelihood_q3(params(1:4), params(5:8), params(9), V00, V01, V10, V11, q_n1t, Firm1, PState, Y), [alpha_hat;gamma_hat;sigma_hat]);
