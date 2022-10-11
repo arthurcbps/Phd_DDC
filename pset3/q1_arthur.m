@@ -1,7 +1,7 @@
 
 
 load('dataassign3')
-%Get state transitions and CCPs
+%Get state transitions and CCPs (computed in separate R script)
 
 CCPs=readtable('ccp_allObserved.csv');
 state_transition = readtable('transitionState_allObserved.csv');
